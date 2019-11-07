@@ -60,6 +60,30 @@ library(cansim)
 
 ```
 
+#### functions
+```{r}
+
+get_mom_stats <- function(df) {
+  
+  df %>%
+    arrange(ref_date) %>%
+    mutate(mom_val = lag(value), 
+           mom_pct = ((value / lag(value, n = 1)) - 1) * 100,
+           mom_chg = (value - lag(value, n = 1)))
+}
+
+get_yoy_stats <- function(df) {
+  
+  df %>%
+    arrange(ref_date) %>%
+    mutate(yoy_val = lag(value, n = 12),
+           yoy_pct = ((value / lag(value, n = 12)) - 1) * 100,
+           yoy_chg = (value - lag(value, n = 12)))
+}
+
+```
+
+
 ---
 
 ## Background
@@ -154,45 +178,85 @@ last_year <- latest_month - years(1)
 
 ```
 
-
-
-
-try some filtering
+geo codes:
 
 ```{r}
-
 data_20_10_0008 %>%
-  filter(
-#    geo == "British Columbia",
-    adjustments %in% c("Unadjusted", "Seasonally adjusted"),
-    classification_code_for_north_american_industry_classification_system_naics == "[44-45]") %>%
-  group_by(geo, adjustments) %>%
-  mutate(mom_val = lag(value),                                     
-         mom_pct = ((value / lag(value, n = 1)) - 1) * 100,
-         mom_chg = (value - lag(value, n = 1)) ) %>%
-  mutate(yoy_val = lag(value, n = 12),
-         yoy_pct = ((value / lag(value, n = 12)) - 1) * 100,
-         yoy_chg = (value - lag(value, n = 12)) ) %>%
-  arrange(desc(ref_date)) %>%
-  select(ref_date, geo,
-         adjustments,
-         value, 
-         mom_val, mom_pct, mom_chg,
-         yoy_val, yoy_pct, yoy_chg) %>%
-  ungroup() %>%
-#  filter(ref_date >= "2017-07-01", 
-  filter(ref_date %in% c(as.Date(latest_month)), 
-         adjustments == "Seasonally adjusted") %>%
-  arrange(mom_pct)
-
+  select(geo, geo_uid) %>% unique()
 ```
 
 
 
+Month-over-month change in total retail sales by province:
 
 ```{r}
 
-unique(data_20_10_0008$geo)
+provinces_mom <- data_20_10_0008 %>%
+  filter(## Extract Canada and provinces (not territories)
+    (geo_uid == "11124" | str_detect(geo_uid, "^\\d{2}$")) & !(geo_uid %in% c("60", "61", "62")), 
+    adjustments %in% c("Unadjusted", "Seasonally adjusted"),
+    classification_code_for_north_american_industry_classification_system_naics == "[44-45]") %>%
+  group_by(geo, adjustments) %>%
+  get_mom_stats() %>%
+  select(ref_date, geo,
+         adjustments,
+         value, 
+         mom_val, mom_pct, mom_chg) %>%
+  ungroup() %>%
+  # Add an order BC, Canada, Highest to lowest mom:
+  mutate(order = case_when(geo == "British Columbia" ~ 1,
+                           geo == "Canada" ~ 2,
+                           TRUE ~ rank(desc(mom_pct)) + 2)) %>%
+  arrange(order)
+
+```
+
+Plot provinces mom, seasonally adjusted, latest month only. Too crowded to include last month mom in same chart? Idea to have shiny app be able to flip charts so many months back. Hovers with detailed %change for each bar.
+
+```{r}
+ggplot(provinces_mom %>% 
+         filter(ref_date %in% c(as.Date(latest_month)),
+                adjustments == "Seasonally adjusted"),
+       aes(x = reorder(geo, order), y = mom_pct)) +
+  geom_bar(stat = "identity") +
+  geom_hline(yintercept = 0) +
+  labs(x = NULL,
+       y = "% Change", 
+       title = "Month-Over-Month Change in Retail Sales", 
+       subtitle = "By Province") +
+  theme_classic() +
+  theme(axis.line.x = element_blank(),
+        axis.text.x = element_text(angle = 25))
+
+
+```
+Follow with a line-chart over several years (?). Which series are relevant? Adjusted and Unadjusted for now. Idea to stick only to seasonally adjusted but be able to add provinces to line chart, by clicking on bars in previous chart.
+
+```{r}
+
+ggplot(provinces_mom %>%
+         filter(geo %in% c("British Columbia"),
+         as.Date(ref_date) %in% c((latest_month - years(5)):latest_month)),
+       aes(x = ref_date, y = value/1000000, color = adjustments)) +
+  geom_line() +
+  labs(x = NULL,
+       y = "Billions of Dollars", 
+       title = "Retail Sales", 
+       subtitle = "for BC") +
+  theme_classic() +
+  scale_x_date(limits = c(latest_month - years(5), latest_month),
+               expand = c(0,0),
+               date_breaks = "6 months", 
+               date_labels = "%b %Y" ) +
+  theme(axis.text.x = element_text(angle = 15))
+  
+
+```
+
+
+Canada, BC and Vancouver data only:
+
+```{r}
 
 data_Can_BC_YVR <- data_20_10_0008 %>%
   filter(geo %in% c("Canada", "British Columbia", "Vancouver, British Columbia"), 
@@ -200,15 +264,11 @@ data_Can_BC_YVR <- data_20_10_0008 %>%
   group_by(geo, 
            adjustments,
            classification_code_for_north_american_industry_classification_system_naics) %>%
-  mutate(mom_val = lag(value),
-         mom_pct = ((value / lag(value, n = 1)) - 1) * 100,
-         mom_chg = (value - lag(value, n = 1)) ) %>%
-  mutate(yoy_val = lag(value, n = 12),
-         yoy_pct = ((value / lag(value, n = 12)) - 1) * 100,
-         yoy_chg = (value - lag(value, n = 12)) ) %>%
+  get_mom_stats() %>% 
+  get_yoy_stats() %>%
   arrange(desc(ref_date)) %>%
   select(ref_date, geo,
-         classification_code_for_north_american_industry_classification_system_naics,        
+         classification_code_for_north_american_industry_classification_system_naics,      
          adjustments,
          value, 
          mom_val, mom_pct, mom_chg,
@@ -221,13 +281,14 @@ write_csv(data_Can_BC_YVR, here("data", "data_Can_BC_YVR.csv"))
 
 ```
 
+
+
 ```{r}
 
 
 data_Can_BC_YVR %>%
   filter(ref_date %in% c(latest_month, last_month, last_year),
          geo == "Canada",
-         classification_code_for_north_american_industry_classification_system_naics == "[44-45]",
          adjustments == "Seasonally adjusted")
 
 
@@ -236,8 +297,6 @@ data_Can_BC_YVR %>%
 
 
 create BC-only version of the table
-
-- note: that's three times calculating mom and yoy values ... time to write a function!
 
 ```{r}
 
@@ -248,12 +307,8 @@ BC_data_0008 <-
          adjustments %in% c("Unadjusted", "Seasonally adjusted") ) %>%
   group_by(geo, adjustments,
            classification_code_for_north_american_industry_classification_system_naics) %>%
-  mutate(mom_val = lag(value),
-         mom_pct = ((value / lag(value, n = 1)) - 1) * 100,
-         mom_chg = (value - lag(value, n = 1)) ) %>%
-  mutate(yoy_val = lag(value, n = 12),
-         yoy_pct = ((value / lag(value, n = 12)) - 1) * 100,
-         yoy_chg = (value - lag(value, n = 12)) ) %>%
+  get_mom_stats() %>%
+  get_yoy_stats() %>%
   arrange(vector, ref_date) %>%
   ungroup()
 
@@ -305,9 +360,39 @@ BC_data_0008 %>%
   mutate(yoy_netchange = value - yoy_val) %>%
   arrange(yoy_netchange)
 
-write_csv(BC_data_0008, here("data", "BC_data_0008.csv"))
+#write_csv(BC_data_0008, here("data", "BC_data_0008.csv"))
 
 ```
+Plot subsector mom stats:
 
+```{r}
+
+BC_data_0008 %>%
+  filter(
+    ref_date == latest_month,
+    str_detect(
+      classification_code_for_north_american_industry_classification_system_naics, "\\[4..\\]")
+    ) %>%
+    select(ref_date, geo, 
+         north_american_industry_classification_system_naics,
+         classification_code_for_north_american_industry_classification_system_naics, 
+         value,
+         mom_val, mom_pct) %>%
+  group_by(classification_code_for_north_american_industry_classification_system_naics) %>%
+  mutate(Subsector = 
+           str_remove(north_american_industry_classification_system_naics,
+                      "\\[4..\\]") %>%
+           strwrap(width = 8) %>% paste0(collapse = "\n"))  %>%
+ ggplot(aes(x = reorder(Subsector, desc(mom_pct)),
+        y = mom_pct)) +
+  geom_bar(stat = "identity") +
+ geom_hline(yintercept = 0) +
+ labs(x = NULL,
+      y = "% Change",
+      title = "Month-Over-Month Change in Retail Sales",
+      subtitle = "By Subsector") +
+ theme_classic() +
+ theme(axis.line.x = element_blank())
+```
 
 
