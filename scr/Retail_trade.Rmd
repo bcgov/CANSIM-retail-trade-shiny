@@ -1,0 +1,398 @@
+---
+title: "Retail trade - CANSIM data"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+<!--
+Copyright 2019 Province of British Columbia
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and limitations under the License.
+-->
+
+<!--
+
+The data used by this file are licensed under the Statistics Canada Open License.
+
+You may maintain a copy of the License at
+
+https://www.statcan.gc.ca/eng/reference/licence
+
+--->
+
+# Retail trade
+
+
+This set of scripts creates summary tables and graphs plotting the monthly Retail Trade data collected and reported by Statistics Canada.
+
+#### packages
+
+```{r}
+
+# tidyverse
+library(tidyverse)
+#library(readr)
+#library(ggplot2) 
+#library(dplyr)
+library(stringr)
+library(glue)
+library(lubridate)
+
+# extending ggplot2
+library(scales)
+
+# utilities
+library(here)
+library(janitor)
+
+# cansim
+#install.packages("devtools")
+#devtools::install_github("mountainmath/cansim")
+library(cansim)
+
+```
+
+#### functions
+```{r}
+
+get_mom_stats <- function(df) {
+  
+  df %>%
+    arrange(ref_date) %>%
+    mutate(mom_val = lag(value), 
+           mom_pct = ((value / lag(value, n = 1)) - 1) * 100,
+           mom_chg = (value - lag(value, n = 1)))
+}
+
+get_yoy_stats <- function(df) {
+  
+  df %>%
+    arrange(ref_date) %>%
+    mutate(yoy_val = lag(value, n = 12),
+           yoy_pct = ((value / lag(value, n = 12)) - 1) * 100,
+           yoy_chg = (value - lag(value, n = 12)))
+}
+
+```
+
+
+---
+
+## Background
+
+The Daily, 2019-10-22
+
+* https://www150.statcan.gc.ca/n1/daily-quotidien/191022/dq191022a-eng.htm
+
+The Daily, 2019-02-22
+
+* https://www150.statcan.gc.ca/n1/daily-quotidien/190222/dq190222a-eng.htm?HPA=1
+
+
+The Daily, 2018-09-21
+
+* https://www150.statcan.gc.ca/n1/daily-quotidien/180921/dq180921b-eng.htm
+
+
+
+## data
+
+There are 3 data tables associated with this:
+https://www150.statcan.gc.ca/n1/daily-quotidien/180921/dq180921b-cansim-eng.htm
+
+
+The primary table:
+
+* Retail trade sales by province and territory (x 1,000)
+
+  - Table: 20-10-0008-01 (formerly CANSIM  080-0020)
+  
+  - https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010000801
+
+Supplementary tables:
+
+* Retail E-commerce sales, unadjusted (x 1,000)
+
+  - Table: 20-10-0072-01 (formerly CANSIM  080-0033)
+
+  - https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010007201
+  
+* Retail sales, price, and volume, seasonally adjusted (x 1,000,000): Constant Prices
+
+  - Table: 20-10-0078-01 (formerly CANSIM  080-0027)
+
+  - https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010007801
+  
+
+
+###
+
+Read the data
+
+
+```{r}
+
+data_20_10_0008_source <- get_cansim("20-10-0008-01")
+
+data_20_10_0008 <- data_20_10_0008_source %>%
+  mutate(REF_DATE = ymd(REF_DATE, truncated = 2)) 
+
+# the other tables  
+
+#data_20_10_0078 <- get_cansim("20-10-0078-01")
+#
+#data_20_10_0078 <- data_20_10_0078 %>%
+#    mutate(ref_date = ymd(ref_date, truncated = 2)) 
+  
+```
+
+
+data cleaning
+
+
+```{r}
+
+# run {janitor} to clean up names
+# see http://sfirke.github.io/janitor/ for functions
+data_20_10_0008 <- janitor::clean_names(data_20_10_0008)
+
+
+# set table number as variable
+tablenum <- "data_20_10_0008"
+print(glue("TABLE:  ", tablenum))
+
+# set date variables
+latest_month <- max(data_20_10_0008$ref_date)
+last_month <- latest_month - months(1)
+last_year <- latest_month - years(1)
+
+
+
+```
+
+geo codes:
+
+```{r}
+data_20_10_0008 %>%
+  select(geo, geo_uid) %>% unique()
+```
+
+
+
+Month-over-month change in total retail sales by province:
+
+```{r}
+
+provinces_mom <- data_20_10_0008 %>%
+  filter(## Extract Canada and provinces (not territories)
+    (geo_uid == "11124" | str_detect(geo_uid, "^\\d{2}$")) & !(geo_uid %in% c("60", "61", "62")), 
+    adjustments %in% c("Unadjusted", "Seasonally adjusted"),
+    classification_code_for_north_american_industry_classification_system_naics == "[44-45]") %>%
+  group_by(geo, adjustments) %>%
+  get_mom_stats() %>%
+  select(ref_date, geo,
+         adjustments,
+         value, 
+         mom_val, mom_pct, mom_chg) %>%
+  ungroup() %>%
+  # Add an order BC, Canada, Highest to lowest mom:
+  mutate(order = case_when(geo == "British Columbia" ~ 1,
+                           geo == "Canada" ~ 2,
+                           TRUE ~ rank(desc(mom_pct)) + 2)) %>%
+  arrange(order)
+
+```
+
+Plot provinces mom, seasonally adjusted, latest month only. Too crowded to include last month mom in same chart? Idea to have shiny app be able to flip charts so many months back. Hovers with detailed %change for each bar.
+
+```{r}
+ggplot(provinces_mom %>% 
+         filter(ref_date %in% c(as.Date(latest_month)),
+                adjustments == "Seasonally adjusted"),
+       aes(x = reorder(geo, order), y = mom_pct)) +
+  geom_bar(stat = "identity") +
+  geom_hline(yintercept = 0) +
+  labs(x = NULL,
+       y = "% Change", 
+       title = "Month-Over-Month Change in Retail Sales", 
+       subtitle = "By Province") +
+  theme_classic() +
+  theme(axis.line.x = element_blank(),
+        axis.text.x = element_text(angle = 25))
+
+
+```
+Follow with a line-chart over several years (?). Which series are relevant? Adjusted and Unadjusted for now. Idea to stick only to seasonally adjusted but be able to add provinces to line chart, by clicking on bars in previous chart.
+
+```{r}
+
+ggplot(provinces_mom %>%
+         filter(geo %in% c("British Columbia"),
+         as.Date(ref_date) %in% c((latest_month - years(5)):latest_month)),
+       aes(x = ref_date, y = value/1000000, color = adjustments)) +
+  geom_line() +
+  labs(x = NULL,
+       y = "Billions of Dollars", 
+       title = "Retail Sales", 
+       subtitle = "for BC") +
+  theme_classic() +
+  scale_x_date(limits = c(latest_month - years(5), latest_month),
+               expand = c(0,0),
+               date_breaks = "6 months", 
+               date_labels = "%b %Y" ) +
+  theme(axis.text.x = element_text(angle = 15))
+  
+
+```
+
+
+Canada, BC and Vancouver data only:
+
+```{r}
+
+data_Can_BC_YVR <- data_20_10_0008 %>%
+  filter(geo %in% c("Canada", "British Columbia", "Vancouver, British Columbia"), 
+    adjustments %in% c("Unadjusted", "Seasonally adjusted") ) %>%
+  group_by(geo, 
+           adjustments,
+           classification_code_for_north_american_industry_classification_system_naics) %>%
+  get_mom_stats() %>% 
+  get_yoy_stats() %>%
+  arrange(desc(ref_date)) %>%
+  select(ref_date, geo,
+         classification_code_for_north_american_industry_classification_system_naics,      
+         adjustments,
+         value, 
+         mom_val, mom_pct, mom_chg,
+         yoy_val, yoy_pct, yoy_chg) %>%
+  ungroup() 
+
+data_Can_BC_YVR
+
+write_csv(data_Can_BC_YVR, here("data", "data_Can_BC_YVR.csv"))
+
+```
+
+
+
+```{r}
+
+
+data_Can_BC_YVR %>%
+  filter(ref_date %in% c(latest_month, last_month, last_year),
+         geo == "Canada",
+         adjustments == "Seasonally adjusted")
+
+
+
+```
+
+
+create BC-only version of the table
+
+```{r}
+
+
+BC_data_0008 <- 
+ data_20_10_0008 %>%
+  filter(geo == "British Columbia",
+         adjustments %in% c("Unadjusted", "Seasonally adjusted") ) %>%
+  group_by(geo, adjustments,
+           classification_code_for_north_american_industry_classification_system_naics) %>%
+  get_mom_stats() %>%
+  get_yoy_stats() %>%
+  arrange(vector, ref_date) %>%
+  ungroup()
+
+BC_data_0008
+
+```
+
+
+Month over month, total retail (2 digit NAICS)
+
+
+```{r}
+
+
+BC_data_0008 %>%
+  filter(
+    ref_date == latest_month,
+         classification_code_for_north_american_industry_classification_system_naics 
+         == "[44-45]") %>%
+  select(ref_date, geo, 
+         north_american_industry_classification_system_naics,
+         adjustments, 
+         value,
+         mom_val, mom_pct) %>%
+  mutate(mom_netchange = value - mom_val) %>%
+  arrange(mom_netchange)
+
+```
+
+
+Year over year, major retail groups (3 digit NAICS)
+
+
+```{r}
+
+BC_data_0008 %>%
+  filter(
+    ref_date == latest_month,
+    str_detect(
+      classification_code_for_north_american_industry_classification_system_naics, "\\[4..\\]")
+    ) %>%
+    select(ref_date, geo, 
+         north_american_industry_classification_system_naics,
+         classification_code_for_north_american_industry_classification_system_naics, 
+         adjustments, 
+         value,
+#         mom_val, mom_pct, 
+         yoy_val, yoy_pct) %>%
+  mutate(yoy_netchange = value - yoy_val) %>%
+  arrange(yoy_netchange)
+
+#write_csv(BC_data_0008, here("data", "BC_data_0008.csv"))
+
+```
+Plot subsector mom stats:
+
+```{r}
+
+BC_data_0008 %>%
+  filter(
+    ref_date == latest_month,
+    str_detect(
+      classification_code_for_north_american_industry_classification_system_naics, "\\[4..\\]")
+    ) %>%
+    select(ref_date, geo, 
+         north_american_industry_classification_system_naics,
+         classification_code_for_north_american_industry_classification_system_naics, 
+         value,
+         mom_val, mom_pct) %>%
+  group_by(classification_code_for_north_american_industry_classification_system_naics) %>%
+  mutate(Subsector = 
+           str_remove(north_american_industry_classification_system_naics,
+                      "\\[4..\\]") %>%
+           strwrap(width = 8) %>% paste0(collapse = "\n"))  %>%
+ ggplot(aes(x = reorder(Subsector, desc(mom_pct)),
+        y = mom_pct)) +
+  geom_bar(stat = "identity") +
+ geom_hline(yintercept = 0) +
+ labs(x = NULL,
+      y = "% Change",
+      title = "Month-Over-Month Change in Retail Sales",
+      subtitle = "By Subsector") +
+ theme_classic() +
+ theme(axis.line.x = element_blank())
+```
+
+
