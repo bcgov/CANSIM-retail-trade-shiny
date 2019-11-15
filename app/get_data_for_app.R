@@ -60,6 +60,7 @@ last_year <- latest_month - years(1)
 
 
 # Filter province data for app ----
+# Seasonally adjusted - month over month
 provinces <- data_20_10_0008 %>%
   ## Extract Canada and provinces (not territories), Seasonally Adjusted Retail Trade
   filter(vector %in% c("v52367097", "v52367155", "v52367185", "v52367215", "v52367245",
@@ -67,7 +68,6 @@ provinces <- data_20_10_0008 %>%
                        "v52367573")) %>%
   group_by(geo) %>%
   get_mom_stats() %>%
-  get_yoy_stats() %>%
   select(ref_date, geo,
          value, mom_pct, yoy_pct) %>%
   ungroup()
@@ -76,6 +76,7 @@ write_rds(provinces, here("data","provinces.rds"))
 
 
 # Filter sector data for app ----
+# unadjusted - year over year
 sectors <-
   data_20_10_0008 %>%
   filter(geo == "British Columbia",
@@ -83,7 +84,6 @@ sectors <-
          str_detect(
            classification_code_for_north_american_industry_classification_system_naics, "\\[4..\\]")) %>%
   group_by(classification_code_for_north_american_industry_classification_system_naics) %>%
-  get_mom_stats() %>%
   get_yoy_stats() %>%
   mutate(Subsector =
            str_remove(north_american_industry_classification_system_naics,
