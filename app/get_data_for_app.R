@@ -79,15 +79,19 @@ write_rds(provinces, here("data","provinces.rds"))
 sectors <-
   data_20_10_0008 %>%
   filter(geo == "British Columbia",
-         adjustments %in% c("Seasonally adjusted"),
+         adjustments %in% c("Unadjusted"),
          str_detect(
            classification_code_for_north_american_industry_classification_system_naics, "\\[4..\\]")) %>%
   group_by(classification_code_for_north_american_industry_classification_system_naics) %>%
   get_mom_stats() %>%
   get_yoy_stats() %>%
-  select(ref_date, Sector = classification_code_for_north_american_industry_classification_system_naics,
-         value, mom_pct, yoy_pct) %>%
-  ungroup()
+  mutate(Subsector =
+           str_remove(north_american_industry_classification_system_naics,
+                      "\\[4..\\]") %>%
+           strwrap(width = 8) %>% paste0(collapse = "\n")) %>%
+  ungroup() %>%
+  select(ref_date, Subsector,
+         value, mom_pct, yoy_pct)
 
 write_rds(sectors, here("data","sectors.rds"))
 
