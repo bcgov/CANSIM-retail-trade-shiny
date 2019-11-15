@@ -54,20 +54,22 @@ ui <- fluidPage(title = "BC Retail Sales",
   HTML("<html lang='en'>"),
   fluidRow(
     column(width = 12,
-           style = "background-color:#003366; border-bottom:2px solid #fcba19;",
-           tags$header(class="header", style="padding:0 0px 0 0px; display:flex; height:80px; width:100%;",
+           style = "background-color:#003366; border-bottom:2px solid #fcba19;position:fixed;z-index:10000",
+           tags$header(class="header", style="padding:0 0px 0 0px; display:flex; height:80px;
+           width:100%;",
              tags$div(class="banner", style="display:flex; justify-content:flex-start; align-items:center; margin: 0 10px 0 10px",
                a(href="https://www2.gov.bc.ca/gov/content/data/about-data-management/bc-stats",
                  img(src = "bcstats_logo_rev.png", title = "BC Stats", height = "80px", alt = "British Columbia - BC Stats"),
                  onclick="gtag"
-               )#,
-               #h1("British Columbia - Retail Sales", style="font-weight:400; color:white; margin: 5px 5px 0 18px;")
+               ),
+               h1("British Columbia - Retail Sales", style="font-weight:400; color:white; margin: 5px 5px 0 18px;")
              )
            )
     ),
     column(width=12,
+           style = "margin-top:100px",
             tags$fieldset(
-                  tags$legend(h2("British Columbia - Retail Sales")),
+                  tags$legend(h2("Some heading here")),
                   p("Some text in a paragraph here.",
                   style="font-size:14px; color:#494949"),
                   br()
@@ -78,30 +80,32 @@ ui <- fluidPage(title = "BC Retail Sales",
            sidebarLayout(
              sidebarPanel(
                style="background-color:#F2F2F2;",
-               width = 2,
+               width = 3,
                tags$fieldset(
                  tags$legend(h3("Date selection")),
                  selectInput(
                    inputId = "date",
                    label = "Date",
-                   choices = dates
+                   choices = dates,
+                   selectize = FALSE,
+                   size = 3
                    )
                  ),
                tags$fieldset(
                  tags$legend(h3("Monthly Change")),
-                 h3(uiOutput(outputId = "BC_mom"))
+                 h3(uiOutput(outputId = "BC_mom", align = "center"))
                  ),
                br(),
                tags$fieldset(
                  tags$legend(h3("Yearly Change")),
-                 h3(uiOutput(outputId = "BC_yoy"))
+                 h3(uiOutput(outputId = "BC_yoy", align = "center"))
                  ),
                br(),
                br(),
                br()
                ),
            mainPanel(
-             width = 10,
+             width = 9,
              tabsetPanel(
                tabPanel("Provinces",
                         tags$fieldset(
