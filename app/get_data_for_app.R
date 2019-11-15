@@ -75,11 +75,19 @@ provinces <- data_20_10_0008 %>%
 write_rds(provinces, here("data","provinces.rds"))
 
 
-## Reactive on ref_month selected:
-## Filter provinces and then mutate order
-  # Add an order BC, Canada, Highest to lowest mom:
-  # mutate(order = case_when(geo == "British Columbia" ~ 1,
-  #                          geo == "Canada" ~ 2,
-  #                          TRUE ~ rank(desc(mom_pct)) + 2)) %>%
-  # arrange(order)
+# Filter sector data for app ----
+sectors <-
+  data_20_10_0008 %>%
+  filter(geo == "British Columbia",
+         adjustments %in% c("Seasonally adjusted"),
+         str_detect(
+           classification_code_for_north_american_industry_classification_system_naics, "\\[4..\\]")) %>%
+  group_by(classification_code_for_north_american_industry_classification_system_naics) %>%
+  get_mom_stats() %>%
+  get_yoy_stats() %>%
+  select(ref_date, Sector = classification_code_for_north_american_industry_classification_system_naics,
+         value, mom_pct, yoy_pct) %>%
+  ungroup()
+
+write_rds(sectors, here("data","sectors.rds"))
 
