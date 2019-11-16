@@ -105,7 +105,7 @@ ui <- fluidPage(title = "BC Retail Sales",
                tags$fieldset(
                  tags$legend(h4("Additional information")),
                  uiOutput(outputId = "info"),
-                 HTML(paste0("<br><br> Sources: Table <a href='https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010000801'>20-10-0008-01</a>",
+                 HTML(paste0("<br><br> Sources: <a href='https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010000801'>Table 20-10-0008-01</a>",
                              " <br>", "Code for this app: <a href = 'https://github.com/bcgov/CANSIM-retail-trade-shiny'>Github</a>",
                              " <br>", "Last updated: ", updateDate))
                  ),
@@ -175,7 +175,7 @@ server <- function(input, output, session) {
 
     if(input$tabs == "Provinces") {
       date <- provinces %>%
-        filter(as.Date(ref_date) %in% c((latest_month - years(1)):latest_month)) %>%
+        filter(as.Date(ref_date) %in% c((max(ref_date) - years(1)):max(ref_date))) %>%
         select(ref_date) %>%
         unique() %>%
         arrange(desc(ref_date)) %>%
@@ -198,7 +198,7 @@ server <- function(input, output, session) {
     else if(input$tabs == "Sectors") {
 
       date <- sectors %>%
-        filter(as.Date(ref_date) %in% c((latest_month - years(1)):latest_month)) %>%
+        filter(as.Date(ref_date) %in% c((max(ref_date) - years(1)):max(ref_date))) %>%
         select(ref_date) %>%
         unique() %>%
         arrange(desc(ref_date)) %>%
