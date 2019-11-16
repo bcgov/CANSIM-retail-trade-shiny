@@ -1,24 +1,14 @@
 # tidyverse
 library(tidyverse)
-#library(readr)
-#library(ggplot2)
-#library(dplyr)
 library(stringr)
-library(glue)
 library(lubridate)
-
-# extending ggplot2
-library(scales)
-
 # utilities
 library(here)
 library(janitor)
-
 # cansim
-#install.packages("devtools")
-#devtools::install_github("mountainmath/cansim")
 library(cansim)
 
+# functions ----
 
 get_mom_stats <- function(df) {
 
@@ -48,17 +38,6 @@ data_20_10_0008 <- data_20_10_0008_source %>%
 data_20_10_0008 <- janitor::clean_names(data_20_10_0008)
 
 
-# Get Static Variables ----
-# set table number as variable
-tablenum <- "data_20_10_0008"
-print(glue("TABLE:  ", tablenum))
-
-# set date variables
-latest_month <- max(data_20_10_0008$ref_date)
-last_month <- latest_month - months(1)
-last_year <- latest_month - years(1)
-
-
 # Filter province data for app ----
 # Seasonally adjusted - month over month
 provinces <- data_20_10_0008 %>%
@@ -74,7 +53,6 @@ provinces <- data_20_10_0008 %>%
   ungroup()
 
 write_rds(provinces, here("app","data","provinces.rds"))
-
 
 # Filter sector data for app ----
 # unadjusted - year over year
