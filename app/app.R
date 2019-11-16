@@ -23,6 +23,8 @@ if (!require('shinydashboard')) install.packages('shinydashboard')
 if (!require('rsconnect')) install.packages('rsconnect')
 if (!require('DT')) install.packages('DT')
 library(plotly)
+library(lubridate)
+library(janitor)
 #if (!require('GAlogger')) devtools::install_github("bnosac/GAlogger")
 
 # ga_set_tracking_id("UA-150850915-1")
@@ -83,8 +85,8 @@ ui <- fluidPage(title = "BC Retail Sales",
            style = "margin-top:100px",
            sidebarLayout(
              sidebarPanel(
-               #width = 3, ## Define width in style instead
-               style="background-color:#F2F2F2;position:fixed;width:300px",
+               width = 3, ## Define width in style instead
+               #style="background-color:#F2F2F2;position:fixed;width:300px",
                tags$fieldset(
                  tags$legend(h3("Date")),
                  uiOutput(outputId = "date")
@@ -113,8 +115,8 @@ ui <- fluidPage(title = "BC Retail Sales",
                br()
                ),
            mainPanel(
-             #width = 9,
-             style = "margin-left:320px",
+             width = 9,
+             #style = "margin-left:320px",
              tabsetPanel(id = "tabs",
                tabPanel("Provinces",
                         tags$fieldset(
