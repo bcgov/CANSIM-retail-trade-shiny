@@ -277,7 +277,7 @@ data_Can_BC_YVR <- data_20_10_0008 %>%
 
 data_Can_BC_YVR
 
-write_csv(data_Can_BC_YVR, here("data", "data_Can_BC_YVR.csv"))
+#write_csv(data_Can_BC_YVR, here("data", "data_Can_BC_YVR.csv"))
 
 ```
 
