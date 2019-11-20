@@ -1,6 +1,5 @@
 # tidyverse
 library(tidyverse)
-library(stringr)
 library(lubridate)
 # utilities
 library(here)

@@ -1,14 +1,3 @@
-# This is a Shiny web application. You can run the application locally by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#   http://shiny.rstudio.com/
-#
-#   http://rstudio.github.io/shinydashboard/get_started.html
-#
-# To deploy an update, update code and data, then load >library(rsconnect), set working
-# directory to app.R directory and >deployApp(appName = "retailSalesApp", appId = 958258)
 
 #####
 # METADATA for app
@@ -16,24 +5,16 @@
   updateDate <- "Nov 2019"
 
 ## load libraries  ----
-## installs any missing packages this script uses
-if (!require('tidyverse')) install.packages('tidyverse')
-if (!require('shiny')) install.packages('shiny')
-if (!require('shinydashboard')) install.packages('shinydashboard')
-if (!require('rsconnect')) install.packages('rsconnect')
-if (!require('DT')) install.packages('DT')
+library(tidyverse)
+library(shiny)
+library(rsconnect)
 library(plotly)
 library(lubridate)
 library(janitor)
-#if (!require('GAlogger')) devtools::install_github("bnosac/GAlogger")
-
-# ga_set_tracking_id("UA-150850915-1")
-# ga_set_approval(consent = TRUE)
-# ga_collect_pageview(page = "/retailSalesApp")
+library(cansim)
+library(here)
 
 ## read data ----
-#data1 <- readRDS("data/data1.rds")  ## by single-year intervals
-
 provinces <- readRDS("data/provinces.rds")
 sectors <- readRDS("data/sectors.rds")
 
@@ -449,10 +430,7 @@ server <- function(input, output, session) {
 
     }
 
-
   })
-
-
 
 }
 
