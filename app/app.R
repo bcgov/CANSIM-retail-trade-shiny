@@ -1,9 +1,4 @@
 
-#####
-# METADATA for app
- # dataVersion <- "Retail Trade"
-  updateDate <- "Nov 2019"
-
 ## load libraries  ----
 library(tidyverse)
 library(shiny)
@@ -12,27 +7,16 @@ library(plotly)
 library(lubridate)
 library(janitor)
 library(cansim)
-library(here)
+#library(here)
 
 ## read data ----
 provinces <- readRDS("data/provinces.rds")
 sectors <- readRDS("data/sectors.rds")
+updateDate <- readRDS("data/updateDate.rds")
 
-## chart theme ----
-bcstats_chart_theme <-
-  theme_bw() +
-  theme(
-    panel.border = element_rect(colour="white"),
-    plot.title = element_text(face="bold"),
-    legend.position=c(1,0),
-    legend.justification=c(1,0),
-    legend.title = element_text(size=12),
-    legend.text = element_text(size=11),
-    axis.line = element_line(colour="black"),
-    axis.title = element_text(size=12),
-    axis.text = element_text(size=10)
-  )
-
+## chart theme/functions ----
+source("scripts/chart_theme.R")
+source("scripts/functions.R")
 
 # UI demonstrating column layouts
 ui <- fluidPage(title = "BC Retail Sales",
@@ -87,10 +71,7 @@ ui <- fluidPage(title = "BC Retail Sales",
                br(),
                tags$fieldset(
                  tags$legend(h4("Additional information")),
-                 uiOutput(outputId = "info"),
-                 HTML(paste0("<br><br> Sources: <a href='https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010000801'>Table 20-10-0008-01</a>",
-                             " <br>", "Code for this app: <a href = 'https://github.com/bcgov/CANSIM-retail-trade-shiny'>Github</a>",
-                             " <br>", "Last updated: ", updateDate))
+                 uiOutput(outputId = "info")
                  ),
                br(),
                br()
@@ -151,6 +132,13 @@ ui <- fluidPage(title = "BC Retail Sales",
 ## Define server logic ----
 server <- function(input, output, session) {
 
+  ## If cansim table updated, update province/sector data
+  if("20100008" %in% get_cansim_changed_tables(Sys.Date())$productId) {
+    source("scripts/get_data_for_app.R")
+    provinces <- readRDS("data/provinces.rds")
+    sectors <- readRDS("data/sectors.rds")
+    updateDate <- readRDS("data/updateDate.rds")
+  }
 
   get_inputs <- reactive({
 
@@ -245,8 +233,10 @@ server <- function(input, output, session) {
   output$info <- renderUI({
 
     HTML(paste0("All numbers and figures on this tab are based on <b>",
-                get_inputs()$adjustment, "</b> estimates."))
-
+                get_inputs()$adjustment, "</b> estimates.",
+                "<br><br> Sources: <a href='https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010000801'>Table 20-10-0008-01</a>",
+                " <br>", "Code for this app: <a href = 'https://github.com/bcgov/CANSIM-retail-trade-shiny'>Github</a>",
+                " <br>", "Last updated: ", updateDate))
   })
 
   get_data <- reactive({
