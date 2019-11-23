@@ -7,7 +7,6 @@ library(plotly)
 library(lubridate)
 library(janitor)
 library(cansim)
-#library(here)
 
 ## read data ----
 provinces <- readRDS("data/provinces.rds")
@@ -133,7 +132,9 @@ ui <- fluidPage(title = "BC Retail Sales",
 server <- function(input, output, session) {
 
   ## If cansim table updated, update province/sector data
-  if("20100008" %in% get_cansim_changed_tables(Sys.Date())$productId) {
+  if("20100008" %in% get_cansim_changed_tables(Sys.Date())$productId &
+     updateDate != as.character(Sys.Date())) {
+
     source("scripts/get_data_for_app.R")
     provinces <- readRDS("data/provinces.rds")
     sectors <- readRDS("data/sectors.rds")
