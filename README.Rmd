@@ -20,14 +20,8 @@ If you have bcgovr installed and you use RStudio, click the 'Insert BCDevex Badg
 
 ### Usage
 
-Describe data being used (links), and how to run. Eg:
-
-There are four core scripts that are required for the analysis, they need to be run in order:
-
-- 01_clean.R
-- 02_analysis.R
-- 03_visualize.R
-- 04_output.R
+1. To update data in the app, manually run app/scripts/get_data_for_app.R
+2. Publish to shinyapps.io, making sure to de-select get_data_for_app.R as it is not used in running the app
 
 #### Example
 
