@@ -18,7 +18,8 @@ source("scripts/chart_theme.R")
 source("scripts/functions.R")
 
 # UI demonstrating column layouts
-ui <- fluidPage(title = "BC Retail Sales",
+ui <- function(req) {
+  fluidPage(title = "BC Retail Sales",
   theme = "bootstrap.css",
   HTML("<html lang='en'>"),
   fluidRow(
@@ -126,20 +127,21 @@ ui <- fluidPage(title = "BC Retail Sales",
              )
     )
   )
-)
+)}
 
 ## Define server logic ----
 server <- function(input, output, session) {
 
-  ## If cansim table updated, update province/sector data
-  if("20100008" %in% get_cansim_changed_tables(Sys.Date())$productId &
-     updateDate != as.character(Sys.Date())) {
-
-    source("scripts/get_data_for_app.R")
-    provinces <- readRDS("data/provinces.rds")
-    sectors <- readRDS("data/sectors.rds")
-    updateDate <- readRDS("data/updateDate.rds")
-  }
+  # If cansim table updated, update province/sector data
+  # Not working when published on shinyapps.io
+  # if("20100008" %in% get_cansim_changed_tables(Sys.Date())$productId &
+  #    updateDate != as.character(Sys.Date())) {
+  #
+  #   source("scripts/get_data_for_app.R")
+  #   provinces <- readRDS("data/provinces.rds")
+  #   sectors <- readRDS("data/sectors.rds")
+  #   updateDate <- readRDS("data/updateDate.rds")
+  # }
 
   get_inputs <- reactive({
 

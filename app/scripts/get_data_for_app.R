@@ -1,4 +1,5 @@
 # Get date ----
+#updateDate <- "2019-11-22"
 updateDate <- Sys.Date()
 write_rds(updateDate, "data/updateDate.rds")
 
