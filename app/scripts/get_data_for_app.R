@@ -1,7 +1,14 @@
+# Libraries for running standalone
+library(tidyverse)
+library(lubridate)
+library(janitor)
+library(cansim)
+source("app/scripts/functions.R")
+
 # Get date ----
 #updateDate <- "2019-11-22"
 updateDate <- Sys.Date()
-write_rds(updateDate, "data/updateDate.rds")
+write_rds(updateDate, "app/data/updateDate.rds")
 
 # Read cansim table ----
 data_20_10_0008 <- get_cansim("20-10-0008-01") %>%
@@ -22,7 +29,7 @@ provinces <- data_20_10_0008 %>%
          value, mom_pct) %>%
   ungroup()
 
-write_rds(provinces, "data/provinces.rds")
+write_rds(provinces, "app/data/provinces.rds")
 
 # Filter sector data for app ----
 # unadjusted - year over year
@@ -43,7 +50,7 @@ sectors <-
   select(ref_date, sector,
          value, yoy_pct)
 
-write_rds(sectors, "data/sectors.rds")
+write_rds(sectors, "app/data/sectors.rds")
 
 
 
