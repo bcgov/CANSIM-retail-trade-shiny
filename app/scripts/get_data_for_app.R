@@ -1,4 +1,3 @@
-# Libraries for running standalone
 library(tidyverse)
 library(lubridate)
 library(janitor)
@@ -6,7 +5,6 @@ library(cansim)
 source("app/scripts/functions.R")
 
 # Get date ----
-#updateDate <- "2019-11-22"
 updateDate <- Sys.Date()
 write_rds(updateDate, "app/data/updateDate.rds")
 
@@ -15,8 +13,7 @@ data_20_10_0008 <- get_cansim("20-10-0008-01") %>%
   mutate(REF_DATE = ymd(REF_DATE, truncated = 2)) %>%
   janitor::clean_names()
 
-# Filter province data for app ----
-# Seasonally adjusted - month over month
+# Filter province data for app: Seasonally adjusted - month over month ----
 provinces <- data_20_10_0008 %>%
   ## Extract Canada and provinces (not territories), Seasonally Adjusted Retail Trade
   filter(vector %in% c("v52367097", "v52367155", "v52367185", "v52367215", "v52367245",
@@ -31,8 +28,7 @@ provinces <- data_20_10_0008 %>%
 
 write_rds(provinces, "app/data/provinces.rds")
 
-# Filter sector data for app ----
-# unadjusted - year over year
+# Filter sector data for app: unadjusted - year over year ----
 sectors <-
   data_20_10_0008 %>%
   filter(geo == "British Columbia",
