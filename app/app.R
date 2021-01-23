@@ -8,14 +8,61 @@ library(lubridate)
 library(janitor)
 library(cansim)
 
-## read data ----
-provinces <- readRDS("data/provinces.rds")
-sectors <- readRDS("data/sectors.rds")
-updateDate <- readRDS("data/updateDate.rds")
+## static vector names ----
+province_names <- data.frame(
+  geo = c("Canada", "Newfoundland and Labrador", "Prince Edward Island", "Nova Scotia", "New Brunswick",
+          "Quebec", "Ontario", "Manitoba", "Saskatchewan", "Alberta",  "British Columbia"),
+  vector = c("v52367097", "v52367394", "v52367424", "v52367454", "v52367484",
+             "v52367514", "v52367573", "v52367155", "v52367185", "v52367215", "v52367245"))
+
+sector_names <-   data.frame(
+  sector = c("All Retail Trade",
+             "Motor vehicle and parts dealers",
+             "Furniture and home furnishings stores",
+             "Electronics and appliance stores",
+             "Building material and garden equipment and supplies dealers",
+             "Food and beverage stores",
+             "Health and personal care stores",
+             "Gasoline stations",
+             "Clothing and clothing accessories stores",
+             "Sporting goods, hobby, book and music stores",
+             "General merchandise stores",
+             "Miscellaneous store retailers"),
+  vector = c("v52367244", "v52367256", "v52367272", "v52367247", "v52367248", "v52367249",
+             "v52367255", "v52367257", "v52367258", "v52367262", "v52367263",  "v52367266"))
 
 ## chart theme/functions ----
 source("scripts/chart_theme.R")
 source("scripts/functions.R")
+
+## get cansim data ----
+provinces <- cansim::get_cansim_vector_for_latest_periods(vectors = c("v52367097", "v52367155", "v52367185", "v52367215", "v52367245",
+                                                                          "v52367394", "v52367424", "v52367454", "v52367484", "v52367514",
+                                                                          "v52367573"), periods = 61) %>%
+  mutate(REF_DATE = ymd(REF_DATE, truncated = 2)) %>%
+  janitor::clean_names() %>%
+  left_join(province_names, by = c("vector")) %>%
+  group_by(geo) %>%
+  get_mom_stats() %>%
+  ungroup() %>%
+  select(ref_date, geo, value, mom_pct)
+
+sectors <- cansim::get_cansim_vector_for_latest_periods(vectors = c("v52367244", "v52367256", "v52367272",
+                                                                   "v52367247", "v52367248", "v52367249",
+                                                                   "v52367255", "v52367257", "v52367258",
+                                                                   "v52367262", "v52367263", "v52367266"),
+                                                       periods = 61) %>%
+  mutate(REF_DATE = ymd(REF_DATE, truncated = 2)) %>%
+  janitor::clean_names() %>%
+  left_join(sector_names, by = c("vector")) %>%
+  group_by(vector) %>%
+  get_yoy_stats() %>%
+  ungroup() %>%
+  select(ref_date, sector, value, yoy_pct)
+
+latestDate <- provinces %>% summarise(date = max(ref_date)) %>%
+  mutate(date = paste(month(date, label = TRUE, abbr = TRUE), year(date), sep = " ")) %>%
+  pull()
 
 # UI demonstrating column layouts
 ui <- function(req) {
@@ -132,18 +179,7 @@ ui <- function(req) {
 ## Define server logic ----
 server <- function(input, output, session) {
 
-  # If cansim table updated, update province/sector data
-  # Not working when published on shinyapps.io
-  # if("20100008" %in% get_cansim_changed_tables(Sys.Date())$productId &
-  #    updateDate != as.character(Sys.Date())) {
-  #
-  #   source("scripts/get_data_for_app.R")
-  #   provinces <- readRDS("data/provinces.rds")
-  #   sectors <- readRDS("data/sectors.rds")
-  #   updateDate <- readRDS("data/updateDate.rds")
-  # }
-
-  get_inputs <- reactive({
+    get_inputs <- reactive({
 
     req(input$tabs)
 
@@ -239,7 +275,7 @@ server <- function(input, output, session) {
                 get_inputs()$adjustment, "</b> estimates.",
                 "<br><br> Sources: <a href='https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010000801'>Table 20-10-0008-01</a>",
                 " <br>", "Code for this app: <a href = 'https://github.com/bcgov/CANSIM-retail-trade-shiny'>Github</a>",
-                " <br>", "Last updated: ", updateDate))
+                " <br>", "Last Reference Date: ", latestDate))
   })
 
   get_data <- reactive({
@@ -359,7 +395,7 @@ server <- function(input, output, session) {
         geom_line() +
         labs(x = NULL,
              y = "Billions of Dollars",
-             title = paste("for",input$geo)) +
+             title = paste("For",input$geo)) +
         bcstats_chart_theme +
         scale_x_date(limits = c(max(get_data()$prov_line_chart$ref_date) - years(5),
                                 max(get_data()$prov_line_chart$ref_date) + months(3)),
@@ -411,7 +447,7 @@ server <- function(input, output, session) {
         geom_line() +
         labs(x = NULL,
              y = "Billions of Dollars",
-             title = paste("for",input$sector)) +
+             title = paste("For",input$sector)) +
         bcstats_chart_theme +
         scale_x_date(limits = c(max(get_data()$sect_line_chart$ref_date) - years(5),
                                 max(get_data()$sect_line_chart$ref_date) + months(3)),
