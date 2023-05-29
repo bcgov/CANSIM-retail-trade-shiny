@@ -12,33 +12,33 @@ library(cansim)
 province_names <- data.frame(
   geo = c("Canada", "Newfoundland and Labrador", "Prince Edward Island", "Nova Scotia", "New Brunswick",
           "Quebec", "Ontario", "Manitoba", "Saskatchewan", "Alberta",  "British Columbia"),
-  vector = c("v52367097", "v52367394", "v52367424", "v52367454", "v52367484",
-             "v52367514", "v52367573", "v52367155", "v52367185", "v52367215", "v52367245"))
+  vector = c("v1446859483", "v1446859543", "v1446859574", "v1446859605", "v1446859636",
+             "v1446859667", "v1446859789", "v1446859881", "v1446859942", "v1446859973", "v1446860064"))
 
 sector_names <-   data.frame(
   sector = c("All Retail Trade",
              "Motor vehicle and parts dealers",
-             "Furniture and home furnishings stores",
-             "Electronics and appliance stores",
+             "Furniture, home furnishings stores, electronics and appliances retailers",
              "Building material and garden equipment and supplies dealers",
-             "Food and beverage stores",
-             "Health and personal care stores",
-             "Gasoline stations",
-             "Clothing and clothing accessories stores",
-             "Sporting goods, hobby, book and music stores",
-             "General merchandise stores",
-             "Miscellaneous store retailers"),
-  vector = c("v52367244", "v52367256", "v52367272", "v52367247", "v52367248", "v52367249",
-             "v52367255", "v52367257", "v52367258", "v52367262", "v52367263",  "v52367266"))
+             "Food and beverage retailers",
+             "Health and personal care retailers",
+             "Gasoline stations and fuel vendors",
+             "Clothing and clothing accessories retailers",
+             "Sporting goods, hobby, musical instrument, book retailers and news dealers",
+             "General merchandise retailers",
+             "Miscellaneous retailers"),
+  vector = c("v1446860063", "v1446860065", "v1446860078", "v1446860071", "v1446860072", "v1446860084",
+             "v1446860085", "v1446860087", "v1446860091", "v1446860083", "v1446860092"))
 
 ## chart theme/functions ----
 source("scripts/chart_theme.R")
 source("scripts/functions.R")
 
 ## get cansim data ----
-provinces <- cansim::get_cansim_vector_for_latest_periods(vectors = c("v52367097", "v52367155", "v52367185", "v52367215", "v52367245",
-                                                                          "v52367394", "v52367424", "v52367454", "v52367484", "v52367514",
-                                                                          "v52367573"), periods = 61) %>%
+provinces <- cansim::get_cansim_vector_for_latest_periods(vectors = c("v1446859483", "v1446859543", "v1446859574",
+                                                                      "v1446859605", "v1446859636", "v1446859667",
+                                                                      "v1446859789", "v1446859881", "v1446859942",
+                                                                      "v1446859973", "v1446860064"), periods = 61) %>%
   mutate(REF_DATE = ymd(REF_DATE, truncated = 2)) %>%
   janitor::clean_names() %>%
   left_join(province_names, by = c("vector")) %>%
@@ -47,10 +47,12 @@ provinces <- cansim::get_cansim_vector_for_latest_periods(vectors = c("v52367097
   ungroup() %>%
   select(ref_date, geo, value, mom_pct)
 
-sectors <- cansim::get_cansim_vector_for_latest_periods(vectors = c("v52367244", "v52367256", "v52367272",
-                                                                   "v52367247", "v52367248", "v52367249",
-                                                                   "v52367255", "v52367257", "v52367258",
-                                                                   "v52367262", "v52367263", "v52367266"),
+sectors <- cansim::get_cansim_vector_for_latest_periods(vectors = c("v1446860063", "v1446860065",
+                                                                    "v1446860078", "v1446860071",
+                                                                    "v1446860072", "v1446860084",
+                                                                    "v1446860085", "v1446860087",
+                                                                    "v1446860091", "v1446860083",
+                                                                    "v1446860092"),
                                                        periods = 61) %>%
   mutate(REF_DATE = ymd(REF_DATE, truncated = 2)) %>%
   janitor::clean_names() %>%
@@ -273,7 +275,7 @@ server <- function(input, output, session) {
 
     HTML(paste0("All numbers and figures on this tab are based on <b>",
                 get_inputs()$adjustment, "</b> estimates.",
-                "<br><br> Sources: <a href='https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010000801'>Table 20-10-0008-01</a>",
+                "<br><br> Sources: <a href='https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010005601'>Table 20-10-0056-01</a>",
                 " <br>", "Code for this app: <a href = 'https://github.com/bcgov/CANSIM-retail-trade-shiny'>Github</a>",
                 " <br>", "Last Reference Date: ", latestDate))
   })
