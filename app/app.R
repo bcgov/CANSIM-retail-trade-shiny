@@ -54,6 +54,7 @@ provinces <- cansim::get_cansim_vector_for_latest_periods(vectors = c("v14468594
                                                                       "v1446859789", "v1446859881", "v1446859942",
                                                                       "v1446859973", "v1446860064"), periods = 61) %>%
   mutate(REF_DATE = ymd(REF_DATE, truncated = 2)) %>%
+  select(-GEO) %>%
   janitor::clean_names() %>%
   left_join(province_names, by = c("vector")) %>%
   group_by(geo) %>%
@@ -172,7 +173,7 @@ server <- function(input, output, session) {
 
     if(input$tabs == "Provinces") {
       date <- provinces %>%
-        filter(as.Date(ref_date) %in% c((max(ref_date) - years(1)):max(ref_date))) %>%
+        filter(ref_date >= max(ref_date) - years(1) & ref_date <= max(ref_date)) %>%
         select(ref_date) %>%
         unique() %>%
         arrange(desc(ref_date)) %>%
@@ -195,7 +196,7 @@ server <- function(input, output, session) {
     else if(input$tabs == "Sectors") {
 
       date <- sectors %>%
-        filter(as.Date(ref_date) %in% c((max(ref_date) - years(1)):max(ref_date))) %>%
+        filter(ref_date >= max(ref_date) - years(1) & ref_date <= max(ref_date)) %>%
         select(ref_date) %>%
         unique() %>%
         arrange(desc(ref_date)) %>%
