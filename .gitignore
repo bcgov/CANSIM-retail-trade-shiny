@@ -5,3 +5,4 @@
 app/rsconnect/
 resources/~*
 sandbox*
+*google-analytics.html

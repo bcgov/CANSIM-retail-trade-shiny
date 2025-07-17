@@ -85,6 +85,7 @@ ui <- function(req) {
   fluidPage(title = "BC Retail Sales",
   theme = "bootstrap.css",
   HTML("<html lang='en'>"),
+  tags$head(includeHTML("www/google-analytics.html")),
   fluidRow(
     column(width = 12,
            style = "background-color:#003366; border-bottom:2px solid #fcba19;position:fixed;z-index:10000",
