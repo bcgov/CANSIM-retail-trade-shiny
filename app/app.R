@@ -87,28 +87,10 @@ ui <- function(req) {
   HTML("<html lang='en'>"),
   tags$head(includeHTML("www/google-analytics.html")),
   fluidRow(
-    column(width = 12,
-           style = "background-color:#003366; border-bottom:2px solid #fcba19;position:fixed;z-index:10000",
-           tags$header(class="header", style="padding:0 0px 0 0px; display:flex; height:80px;
-           width:100%;",
-             tags$div(class="banner", style="display:flex; justify-content:flex-start; align-items:center; margin: 0 10px 0 10px",
-               a(href="https://www2.gov.bc.ca/gov/content/data/about-data-management/bc-stats",
-                 img(src = "bcstats_logo_rev.png", title = "BC Stats", height = "80px", alt = "British Columbia - BC Stats"),
-                 onclick="gtag"
-               ),
-               h1("Retail Sales for British Columbia", style="font-weight:400; color:white; margin: 5px 5px 0 18px;")
-             )
-           )
-    ),
-    # column(width=12,
-    #        style = "margin-top:100px",
-    #         tags$fieldset(
-    #               tags$legend(h2("Some heading here")),
-    #               p("Some text in a paragraph here.",
-    #               style="font-size:14px; color:#494949"),
-    #               br()
-    #         )
-    # ),
+    bcsapps::bcsHeaderUI("header",
+                         appname = "Retail Sales for British Columbia",
+                         github = "https://github.com/bcgov/CANSIM-retail-trade-shiny"),
+
     ## Make changes to this column
     column(width = 12,
            style = "margin-top:100px",
@@ -174,27 +156,15 @@ ui <- function(req) {
            )
         )
     ), ## End of column to make changes to
-    column(width = 12,
-           style = "background-color:#003366; border-top:2px solid #fcba19;",
-
-            tags$footer(class="footer",
-              tags$div(class="container", style="display:flex; justify-content:center; flex-direction:column; text-align:center; height:46px;",
-                tags$ul(style="display:flex; flex-direction:row; flex-wrap:wrap; margin:0; list-style:none; align-items:center; height:100%;",
-                  tags$li(a(href="https://www2.gov.bc.ca/gov/content/home", "Home", style="font-size:1em; font-weight:normal; color:white; padding-left:5px; padding-right:5px; border-right:1px solid #4b5e7e;")),
-                  tags$li(a(href="https://www2.gov.bc.ca/gov/content/home/disclaimer", "Disclaimer", style="font-size:1em; font-weight:normal; color:white; padding-left:5px; padding-right:5px; border-right:1px solid #4b5e7e;")),
-                  tags$li(a(href="https://www2.gov.bc.ca/gov/content/home/privacy", "Privacy", style="font-size:1em; font-weight:normal; color:white; padding-left:5px; padding-right:5px; border-right:1px solid #4b5e7e;")),
-                  tags$li(a(href="https://www2.gov.bc.ca/gov/content/home/accessibility", "Accessibility", style="font-size:1em; font-weight:normal; color:white; padding-left:5px; padding-right:5px; border-right:1px solid #4b5e7e;")),
-                  tags$li(a(href="https://www2.gov.bc.ca/gov/content/home/copyright", "Copyright", style="font-size:1em; font-weight:normal; color:white; padding-left:5px; padding-right:5px; border-right:1px solid #4b5e7e;")),
-                  tags$li(a(href="https://www2.gov.bc.ca/StaticWebResources/static/gov3/html/contact-us.html", "Contact", style="font-size:1em; font-weight:normal; color:white; padding-left:5px; padding-right:5px; border-right:1px solid #4b5e7e;"))
-                )
-              )
-             )
-    )
+    bcsapps::bcsFooterUI("footer")
   )
 )}
 
 ## Define server logic ----
 server <- function(input, output, session) {
+
+  bcsapps::bcsHeaderServer("header")
+  bcsapps::bcsFooterServer("footer")
 
     get_inputs <- reactive({
 
